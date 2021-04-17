@@ -27,9 +27,15 @@ app.use(methodOverride('_method'))
 
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
+
+// HTTP request logger middleware for node.js
 app.use(logger('dev'));
+
+// Parse incoming request bodies in a middleware before your handlers, available under the req.body property
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+
+// Parse Cookie header and populate req.cookies with an object keyed by the cookie names.
 app.use(cookieParser());
 
 
