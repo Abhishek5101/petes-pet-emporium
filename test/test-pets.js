@@ -1,3 +1,4 @@
+  
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 const server = require('../server');
@@ -20,7 +21,6 @@ describe('Pets', ()  => {
 
   after(() => { 
     Pet.deleteMany({$or: [{name: 'Norman'}, {name: 'Spider'}] }).exec((err, pets) => {
-      console.log(pets)
       pets.remove();
     }) 
   });
@@ -74,17 +74,6 @@ describe('Pets', ()  => {
 
   });
 
-// SEARCH
-it('should search ALL pets by name on /search GET', (done) => {
-  chai.request(server)
-      .get('/search?term=norman')
-      .end((err, res) => {
-        res.should.have.status(200);
-        res.should.be.html;
-        done();
-      });
-});
-
   // TEST EDIT
   it('should edit a SINGLE pet on /pets/<id>/edit GET', (done) => {
     var pet = new Pet(fido);
@@ -127,5 +116,16 @@ it('should search ALL pets by name on /search GET', (done) => {
         done();
       });
     });
+  });
+
+  // SEARCH
+  it('should search ALL pets by name on /search GET', (done) => {
+    chai.request(server)
+        .get('/search?term=norman')
+        .end((err, res) => {
+          res.should.have.status(200);
+          res.should.be.html;
+          done();
+        });
   });
 });

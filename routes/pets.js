@@ -1,3 +1,32 @@
+// UPLOADING TO AWS S3
+const multer  = require('multer');
+const upload = multer({ dest: 'uploads/' });
+const Upload = require('s3-uploader');
+require('dotenv/config')
+
+const client = new Upload(process.env.S3_BUCKET, {
+  aws: {
+    path: 'pets/avatar',
+    region: process.env.S3_REGION,
+    acl: 'public-read',
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+  },
+  cleanup: {
+    versions: true,
+    original: true
+  },
+  versions: [{
+    maxWidth: 400,
+    aspect: '16:10',
+    suffix: '-standard'
+  },{
+    maxWidth: 300,
+    aspect: '1:1',
+    suffix: '-square'
+  }]
+});
+
 // MODELS
 const Pet = require('../models/pet');
 
@@ -11,39 +40,30 @@ module.exports = (app) => {
     res.render('pets-new');
   });
 
-  // SEARCH PET
-  app.get('/search', (req, res) => {
-
-    const term = new RegExp(req.query.term, 'i')
-
-    const page = req.query.page || 1
-    Pet.paginate(
-      {
-        $or: [
-          { 'name': term },
-          { 'species': term }
-        ]
-      },
-      { page: page }).then((results) => {
-        res.render('pets-index', { pets: results.docs, pagesCount: results.pages, currentPage: page, term: req.query.term });
-      });
-  });
-  
-
   // CREATE PET
-  app.post('/pets', (req, res) => {
+  app.post('/pets', upload.single('avatar'), (req, res, next) => {
     var pet = new Pet(req.body);
+    pet.save(function (err) {
+      if (req.file) {
+        // Upload the images
+        client.upload(req.file.path, {}, function (err, versions, meta) {
+          if (err) { return res.status(400).send({ err }) };
 
-    pet.save()
-      .then((pet) => {
-        res.send({ pet: pet });
-      })
-      .catch((err) => {
-        // Handle Errors
-        // STATUS OF 400 FOR VALIDATIONS
-        res.status(400).send(err.errors);
-      }) ;
-  });
+          // Pop off the -square and -standard and just use the one URL to grab the image
+          versions.forEach(function (image) {
+            var urlArray = image.url.split('-');
+            urlArray.pop();
+            var url = urlArray.join('-');
+            pet.avatarUrl = url;
+            pet.save()
+          });
+          res.send({ pet });
+        });
+      } else {
+        res.send({ pet });
+      }
+    })
+  })
 
   // SHOW PET
   app.get('/pets/:id', (req, res) => {
@@ -75,5 +95,23 @@ module.exports = (app) => {
     Pet.findByIdAndRemove(req.params.id).exec((err, pet) => {
       return res.redirect('/')
     });
+  });
+
+  // SEARCH PET
+  app.get('/search', (req, res) => {
+
+    const term = new RegExp(req.query.term, 'i')
+
+    const page = req.query.page || 1
+    Pet.paginate(
+      {
+        $or: [
+          { 'name': term },
+          { 'species': term }
+        ]
+      },
+      { page: page }).then((results) => {
+        res.render('pets-index', { pets: results.docs, pagesCount: results.pages, currentPage: page, term: req.query.term });
+      });
   });
 }
