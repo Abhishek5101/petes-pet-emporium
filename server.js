@@ -75,27 +75,3 @@ const auth = {
     domain: process.env.EMAIL_DOMAIN
   }
 }
-
-// create a mailer
-const nodemailerMailgun = nodemailer.createTransport(mg(auth));
-// SEND EMAIL
-const user = {
-  email: 'miabhishekkulkarni@gmail.com',
-  name: 'Abhi',
-  age: '20'
-};
-
-nodemailerMailgun.sendMail({
-  from: 'no-reply@mg.abhipetepets.com',
-  to: user.email, // An array if you have multiple recipients.
-  subject: 'Hey you, awesome!',
-  template: {
-    name: 'email.handlebars',
-    engine: 'handlebars',
-    context: user
-  }
-}).then(info => {
-  console.log('Response: ' + info);
-}).catch(err => {
-  console.log('Error: ' + err);
-});
