@@ -63,3 +63,39 @@ app.use((err, req, res, next) => {
 app.locals.PUBLIC_STRIPE_API_KEY = process.env.PUBLIC_STRIPE_API_KEY
 
 module.exports = app;
+
+// require our mailgun dependencies
+const nodemailer = require('nodemailer');
+const mg = require('nodemailer-mailgun-transport');
+
+// auth with our mailgun API key and domain
+const auth = {
+  auth: {
+    api_key: process.env.MAILGUN_API_KEY,
+    domain: process.env.EMAIL_DOMAIN
+  }
+}
+
+// create a mailer
+const nodemailerMailgun = nodemailer.createTransport(mg(auth));
+// SEND EMAIL
+const user = {
+  email: 'miabhishekkulkarni@gmail.com',
+  name: 'Abhi',
+  age: '20'
+};
+
+nodemailerMailgun.sendMail({
+  from: 'no-reply@mg.abhipetepets.com',
+  to: user.email, // An array if you have multiple recipients.
+  subject: 'Hey you, awesome!',
+  template: {
+    name: 'email.handlebars',
+    engine: 'handlebars',
+    context: user
+  }
+}).then(info => {
+  console.log('Response: ' + info);
+}).catch(err => {
+  console.log('Error: ' + err);
+});
