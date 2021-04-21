@@ -27,4 +27,4 @@ module.exports.sendMail = (user, req, res) => {
       console.log('Error: ' + err);
       res.redirect(`/pets/${req.params.id}`);
   });
-} 
+}

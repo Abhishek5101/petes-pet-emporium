@@ -63,15 +63,3 @@ app.use((err, req, res, next) => {
 app.locals.PUBLIC_STRIPE_API_KEY = process.env.PUBLIC_STRIPE_API_KEY
 
 module.exports = app;
-
-// require our mailgun dependencies
-const nodemailer = require('nodemailer');
-const mg = require('nodemailer-mailgun-transport');
-
-// auth with our mailgun API key and domain
-const auth = {
-  auth: {
-    api_key: process.env.MAILGUN_API_KEY,
-    domain: process.env.EMAIL_DOMAIN
-  }
-}

@@ -100,26 +100,25 @@ module.exports = (app) => {
   });
 
   // SEARCH PET
-  app.get('/search', function (req, res) {
-    Pet
-        .find(
-            { $text : { $search : req.query.term } },
-            { score : { $meta: "textScore" } }
-        )
-        .sort({ score : { $meta : 'textScore' } })
-        .limit(20)
-        .exec(function(err, pets) {
-          if (err) { return res.status(400).send(err) }
+  app.get('/search', (req, res) => {
 
-          if (req.header('Content-Type') == 'application/json') {
-            return res.json({ pets: pets });
-          } else {
-            return res.render('pets-index', { pets: pets, term: req.query.term });
-          }
-        });
+    const term = new RegExp(req.query.term, 'i')
 
+    const page = req.query.page || 1
+    Pet.paginate(
+      {
+        $or: [
+          { 'name': term },
+          { 'species': term }
+        ]
+      },
+      { page: page }).then((results) => {
+        res.render('pets-index', { pets: results.docs, pagesCount: results.pages, currentPage: page, term: req.query.term });
+      });
+  });
+
+  // PURCHASE PET
   app.post('/pets/:id/purchase', (req, res) => {
-    console.log(req.body);
     var stripe = require("stripe")(process.env.PRIVATE_STRIPE_API_KEY);
 
     const token = req.body.stripeToken;
@@ -137,13 +136,17 @@ module.exports = (app) => {
         description: `Purchased ${pet.name}, ${pet.species}`,
         source: token,
       }).then((chg) => {
-        const user = {
-          email: req.body.stripeEmail,
-          amount: chg.amount / 100,
-          petName: pet.name
-        };
-        mailer.sendMail(user, req, res);
+          const user = {
+            email: req.body.stripeEmail,
+            amount: chg.amount / 100,
+            petName: pet.name
+          };
+          mailer.sendMail(user, req, res);
       })
+      // console.log(chg)
+      pet.purchasedAt = Date.now();
+      return pet.save()  
+          
       .catch(err => {
         console.log('Error:' + err);
       });
